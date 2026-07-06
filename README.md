@@ -1,6 +1,6 @@
 # Blackjack Trainer
 
-A little browser game I built to practice basic strategy and card counting (Hi-Lo) for **Card Counting & Quantitative Finance II**.
+A little browser game I built to practice basic strategy and card counting (Hi-Lo) for Card Counting & Quantitative Finance II.
 
 The idea is simple: blackjack is a fun, low-stakes way to get comfortable with probability, expected value, and decision-making under uncertainty — the same stuff that shows up later in quant finance, just with cards instead of markets.
 
@@ -13,12 +13,6 @@ The idea is simple: blackjack is a fun, low-stakes way to get comfortable with p
 - A hand history + performance chart so you can see how you're doing over a shoe
 - A few color themes because why not
 
-## Play it
+## Play
 
-👉 [yahyarafferty.github.io/blackjack-trainer](https://yahyarafferty.github.io/blackjack-trainer/)
-
-No installs, no accounts — just open the link and go.
-
-## Why
-
-This started as a way to make studying less boring. Turns out building it taught me almost as much as playing it.
+[yahyarafferty.github.io/blackjack-trainer](https://yahyarafferty.github.io/blackjack-trainer/)
