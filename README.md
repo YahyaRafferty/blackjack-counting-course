@@ -1,10 +1,8 @@
 # Blackjack Trainer
 
-## Card Counting & Quantitative Finance II
+A browser game to practice basic strategy and card counting (Hi-Lo).
 
-A little browser game to practice basic strategy and card counting (Hi-Lo).
-
-The idea is simple: blackjack is a fun, low-stakes way to get comfortable with probability, expected value, and decision-making under uncertainty the same stuff that shows up later in quant finance, just with cards instead of markets.
+This is the practice tool for students in the Atlas Research - Card Counting and Quantitative Finance II course. A way to get comfortable with the basics of Blackjack, probability, expected value, and decision-making under uncertainty, which is the same stuff that shows up later in quant finance.
 
 ## What it does
 
