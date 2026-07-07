@@ -463,6 +463,15 @@
         </div>
       </div>
       <div class="setting-row">
+        <span>Practice mode</span>
+        <select id="practiceModeSelect">
+          <option value="default" selected>Default</option>
+          <option value="hard">Hard Totals</option>
+          <option value="soft">Soft Totals</option>
+          <option value="pairs">Pairs</option>
+        </select>
+      </div>
+      <div class="setting-row">
         <span>Table color</span>
         <select id="themeSelect">
           <option value="navy" selected>Navy &amp; White</option>
@@ -481,9 +490,18 @@
       </div>
       <div id="countingToggles" style="display:none;">
         <div class="setting-row">
-          <label class="toggle-label"><input type="checkbox" id="toggleRunning" checked> Running count</label>
+          <span>Counting system</span>
+          <select id="countSystemSelect">
+            <option value="hilo" selected>Hi-Lo</option>
+            <option value="ko">KO (Knock-Out)</option>
+            <option value="hiopt2">Hi-Opt II</option>
+            <option value="omega2">Omega II</option>
+          </select>
         </div>
         <div class="setting-row">
+          <label class="toggle-label"><input type="checkbox" id="toggleRunning" checked> Running count</label>
+        </div>
+        <div class="setting-row" id="trueCountToggleRow">
           <label class="toggle-label"><input type="checkbox" id="toggleTrue" checked> True count</label>
         </div>
       </div>
@@ -583,6 +601,41 @@
   "use strict";
 
   const FEEDBACK_DELAY = 1400; // default ms to let the player read the correct/incorrect message before advancing
+
+  // ---- Card counting systems ----
+  // Each system defines a per-rank tag value, whether it's "balanced" (needs
+  // true-count conversion) or "unbalanced" (played straight off the running
+  // count, using an Initial Running Count offset instead), and the index
+  // number at which taking insurance becomes correct.
+  const COUNT_SYSTEMS = {
+    hilo: {
+      label: 'Hi-Lo',
+      balanced: true,
+      insuranceThreshold: 3, // true count >= +3
+      tags: {'2':1,'3':1,'4':1,'5':1,'6':1,'7':0,'8':0,'9':0,'10':-1,'J':-1,'Q':-1,'K':-1,'A':-1}
+    },
+    ko: {
+      label: 'KO (Knock-Out)',
+      balanced: false, // unbalanced: played off the running count directly
+      insuranceThreshold: 3, // running count >= +3 (after IRC offset)
+      tags: {'2':1,'3':1,'4':1,'5':1,'6':1,'7':1,'8':0,'9':0,'10':-1,'J':-1,'Q':-1,'K':-1,'A':-1}
+    },
+    hiopt2: {
+      label: 'Hi-Opt II',
+      balanced: true,
+      insuranceThreshold: 3, // true count >= +3
+      tags: {'2':1,'3':1,'4':2,'5':2,'6':1,'7':1,'8':0,'9':0,'10':-2,'J':-2,'Q':-2,'K':-2,'A':0}
+    },
+    omega2: {
+      label: 'Omega II',
+      balanced: true,
+      insuranceThreshold: 3, // true count >= +3
+      tags: {'2':1,'3':1,'4':2,'5':2,'6':2,'7':1,'8':0,'9':-1,'10':-2,'J':-2,'Q':-2,'K':-2,'A':0}
+    }
+  };
+  // KO's Initial Running Count: lets the running count itself hit the same
+  // +3 insurance/betting pivot regardless of shoe size, with no true-count math.
+  function koInitialRunningCount(numDecks){ return -4 * (numDecks - 1); }
   const SUITS = ['\u2660','\u2665','\u2666','\u2663']; // spade heart diamond club
   const RED_SUITS = ['\u2665','\u2666'];
   const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
@@ -637,10 +690,8 @@
     if(rank==='K'||rank==='Q'||rank==='J') return 10;
     return parseInt(rank,10);
   }
-  function hiLoTag(rank){
-    if(['2','3','4','5','6'].includes(rank)) return 1;
-    if(['7','8','9'].includes(rank)) return 0;
-    return -1; // 10,J,Q,K,A
+  function countTag(rank){
+    return COUNT_SYSTEMS[state.countSystem].tags[rank];
   }
   function handTotal(cards){
     let total=0, aces=0;
@@ -702,7 +753,9 @@
     currentBet: 50,
     handHistory: [],
     handCounter: 0,
-    feedbackDelay: FEEDBACK_DELAY
+    feedbackDelay: FEEDBACK_DELAY,
+    countSystem: 'hilo',
+    practiceMode: 'default'
   };
 
   function formatMoney(n){
@@ -727,7 +780,8 @@
 
   function startNewShoe(){
     state.shoe = buildShoe(state.numDecks);
-    state.runningCount = 0;
+    const sys = COUNT_SYSTEMS[state.countSystem];
+    state.runningCount = sys.balanced ? 0 : koInitialRunningCount(state.numDecks);
     state.handHistory = [];
     state.handCounter = 0;
     updateStatsDisplay();
@@ -738,15 +792,87 @@
     const card = state.shoe.pop();
     card.counted = false;
     if(faceUp){
-      state.runningCount += hiLoTag(card.rank);
+      state.runningCount += countTag(card.rank);
       card.counted = true;
     }
     updateStatsDisplay();
     return card;
   }
+  // Like drawCard, but pulls the first card in the shoe matching a predicate
+  // instead of the top card. The shoe is already randomly shuffled, so picking
+  // the first match introduces no bias. Used by practice mode to guarantee the
+  // player's starting hand is a hard total / soft total / pair. The fallback to
+  // a normal draw below is a last-resort safety net only - ensureShoeCanSupportPracticeHand
+  // reshuffles ahead of time whenever the shoe can't satisfy the current practice
+  // mode's requirements, so in normal play this fallback should never trigger.
+  function drawCardMatching(faceUp, predicate){
+    const idx = state.shoe.findIndex(predicate);
+    if(idx === -1) return drawCard(faceUp);
+    const card = state.shoe.splice(idx,1)[0];
+    card.counted = false;
+    if(faceUp){
+      state.runningCount += countTag(card.rank);
+      card.counted = true;
+    }
+    updateStatsDisplay();
+    return card;
+  }
+  // Deals the player's two starting cards, shaped by the current practice mode.
+  function dealPlayerStartingCards(){
+    const mode = state.practiceMode;
+    if(mode === 'hard'){
+      // No aces, and not a pair, so the hand always resolves via the hard-totals table.
+      const c1 = drawCardMatching(true, c => c.rank !== 'A');
+      const c2 = drawCardMatching(true, c => c.rank !== 'A' && normalizeRank(c.rank) !== normalizeRank(c1.rank));
+      return [c1, c2];
+    }
+    if(mode === 'soft'){
+      // Ace + a 2-9 card: a genuine soft total, never a pair (A,A) or a natural (A,10).
+      const c1 = drawCardMatching(true, c => c.rank === 'A');
+      const c2 = drawCardMatching(true, c => c.rank !== 'A' && normalizeRank(c.rank) !== '10');
+      return [c1, c2];
+    }
+    if(mode === 'pairs'){
+      const groups = ['2','3','4','5','6','7','8','9','10','A'];
+      // Only choose from groups that actually have 2+ cards left in the shoe,
+      // so we don't gamble on a group that's just run dry.
+      const viableGroups = groups.filter(g => state.shoe.filter(c => normalizeRank(c.rank)===g).length >= 2);
+      const pickFrom = viableGroups.length ? viableGroups : groups;
+      const group = pickFrom[Math.floor(Math.random()*pickFrom.length)];
+      const c1 = drawCardMatching(true, c => normalizeRank(c.rank) === group);
+      const c2 = drawCardMatching(true, c => normalizeRank(c.rank) === group);
+      return [c1, c2];
+    }
+    return [drawCard(true), drawCard(true)];
+  }
+  // Practice modes with tight rank requirements (soft needs an ace, pairs needs
+  // a matching pair, hard needs two *different* non-ace ranks) can occasionally
+  // run low on the specific ranks they need well before the shoe is generally
+  // "low" by card count. Reshuffle early in that case so practice mode always
+  // deals what it promises, and drawCardMatching's fallback is never actually hit.
+  function ensureShoeCanSupportPracticeHand(){
+    const mode = state.practiceMode;
+    if(mode === 'soft'){
+      const aces = state.shoe.filter(c => c.rank==='A').length;
+      const lows = state.shoe.filter(c => c.rank!=='A' && normalizeRank(c.rank)!=='10').length;
+      if(aces < 2 || lows < 2) startNewShoe();
+    } else if(mode === 'pairs'){
+      const groups = ['2','3','4','5','6','7','8','9','10','A'];
+      const anyGroupHasPair = groups.some(g => state.shoe.filter(c => normalizeRank(c.rank)===g).length >= 2);
+      if(!anyGroupHasPair) startNewShoe();
+    } else if(mode === 'hard'){
+      // Needs two non-ace cards from *different* rank groups (e.g. two 6's
+      // wouldn't work, since c2 must differ from c1). Checking raw non-ace
+      // count isn't enough - a shoe could have plenty of non-ace cards but
+      // all from a single rank. Require at least 2 distinct groups present.
+      const nonAceGroups = ['2','3','4','5','6','7','8','9','10'];
+      const groupsPresent = nonAceGroups.filter(g => state.shoe.some(c => normalizeRank(c.rank)===g));
+      if(groupsPresent.length < 2) startNewShoe();
+    }
+  }
   function revealCard(card){
     if(!card.counted){
-      state.runningCount += hiLoTag(card.rank);
+      state.runningCount += countTag(card.rank);
       card.counted = true;
       updateStatsDisplay();
     }
@@ -756,6 +882,8 @@
     return Math.max(state.shoe.length / 52, 0.25);
   }
   function trueCount(){
+    const sys = COUNT_SYSTEMS[state.countSystem];
+    if(!sys.balanced) return state.runningCount; // unbalanced systems are played straight off the running count
     return state.runningCount / decksRemainingEstimate();
   }
 
@@ -774,6 +902,9 @@
     deckSelect: document.getElementById('deckSelect'),
     modeSeg: document.getElementById('modeSeg'),
     countingToggles: document.getElementById('countingToggles'),
+    countSystemSelect: document.getElementById('countSystemSelect'),
+    practiceModeSelect: document.getElementById('practiceModeSelect'),
+    trueCountToggleRow: document.getElementById('trueCountToggleRow'),
     toggleHandTotal: document.getElementById('toggleHandTotal'),
     toggleCardsLeft: document.getElementById('toggleCardsLeft'),
     toggleRunning: document.getElementById('toggleRunning'),
@@ -818,10 +949,12 @@
 
   function updateStatsDisplay(){
     const countingMode = state.mode==='counting';
+    const sys = COUNT_SYSTEMS[state.countSystem];
     el.countingToggles.style.display = countingMode ? 'block' : 'none';
     el.statsPanel.style.display = (countingMode || state.realMode) ? 'flex' : 'none';
     el.statRunning.style.display = (countingMode && state.showRunning) ? '' : 'none';
-    el.statTrue.style.display = (countingMode && state.showTrue) ? '' : 'none';
+    el.statTrue.style.display = (countingMode && state.showTrue && sys.balanced) ? '' : 'none';
+    el.trueCountToggleRow.style.display = sys.balanced ? 'flex' : 'none';
     el.statBankroll.style.display = state.realMode ? '' : 'none';
 
     const rc = state.runningCount;
@@ -1007,6 +1140,8 @@
     el.btnInsureYes.style.display = insure ? 'inline-block' : 'none';
     el.btnInsureNo.style.display = insure ? 'inline-block' : 'none';
     el.deckSelect.disabled = state.stage !== 'idle';
+    el.countSystemSelect.disabled = state.stage !== 'idle';
+    el.practiceModeSelect.disabled = state.stage !== 'idle';
     Array.from(el.modeSeg.querySelectorAll('.segbtn')).forEach(b=>b.disabled = state.stage!=='idle');
     el.newShoeBtn.disabled = state.stage !== 'idle';
     updateBetControls();
@@ -1019,6 +1154,7 @@
       return;
     }
     if(state.shoe.length < 15){ startNewShoe(); }
+    ensureShoeCanSupportPracticeHand();
     state.dealerCards = [];
     const startBet = state.realMode ? state.currentBet : 0;
     state.playerHands = [{cards:[], done:false, hasActed:false, fromSplit:false, doubled:false, result:null, bet:startBet}];
@@ -1032,9 +1168,10 @@
       state.bankroll -= startBet;
     }
 
-    state.playerHands[0].cards.push(drawCard(true));
+    const [pc1, pc2] = dealPlayerStartingCards();
+    state.playerHands[0].cards.push(pc1);
     state.dealerCards.push(drawCard(true));
-    state.playerHands[0].cards.push(drawCard(true));
+    state.playerHands[0].cards.push(pc2);
     state.dealerCards.push(drawCard(false)); // hole card, face down, not counted yet
 
     renderTable();
@@ -1108,8 +1245,12 @@
     const canDouble = hand.cards.length===2 && !hand.hasActed;
     const canSplit = canDouble && !state.splitUsed && normalizeRank(hand.cards[0].rank)===normalizeRank(hand.cards[1].rank);
     const canSurrender = canDouble && !hand.fromSplit;
+    // Doubling/splitting both require matching the current stake; in real mode,
+    // don't offer them unless the bankroll can actually cover that extra bet
+    // (otherwise the bankroll could be driven negative).
+    const canAffordExtraStake = !state.realMode || state.bankroll >= hand.bet;
     setMessage('Your move.');
-    setActionButtons({hit:true, stand:true, double:canDouble, split:canSplit, surrender:canSurrender});
+    setActionButtons({hit:true, stand:true, double:canDouble && canAffordExtraStake, split:canSplit && canAffordExtraStake, surrender:canSurrender});
   }
 
   function judgeAndRecord(action, hand){
@@ -1288,7 +1429,8 @@
   // ---------------- Insurance ----------------
   function handleInsurance(taken){
     const isCountingMode = state.mode==='counting';
-    const correctTake = isCountingMode ? (trueCount() >= 3) : false;
+    const sys = COUNT_SYSTEMS[state.countSystem];
+    const correctTake = isCountingMode ? (trueCount() >= sys.insuranceThreshold) : false;
     const isRight = (taken === correctTake);
     recordDecision(isRight);
     if(isRight){
@@ -1352,6 +1494,18 @@
   el.toggleCardsLeft.addEventListener('change', ()=>{ state.showCardsLeft = el.toggleCardsLeft.checked; updateStatsDisplay(); });
   el.toggleRunning.addEventListener('change', ()=>{ state.showRunning = el.toggleRunning.checked; updateStatsDisplay(); });
   el.toggleTrue.addEventListener('change', ()=>{ state.showTrue = el.toggleTrue.checked; updateStatsDisplay(); });
+
+  el.countSystemSelect.addEventListener('change', ()=>{
+    state.countSystem = el.countSystemSelect.value;
+    startNewShoe();
+    setMessage('Switched to '+COUNT_SYSTEMS[state.countSystem].label+'. Fresh shoe shuffled.');
+  });
+
+  const PRACTICE_MODE_LABELS = {default:'Default', hard:'Hard Totals', soft:'Soft Totals', pairs:'Pairs'};
+  el.practiceModeSelect.addEventListener('change', ()=>{
+    state.practiceMode = el.practiceModeSelect.value;
+    setMessage('Practice mode: '+PRACTICE_MODE_LABELS[state.practiceMode]+'. Press Deal for a hand.');
+  });
 
   el.paceSelect.addEventListener('change', ()=>{
     state.feedbackDelay = parseInt(el.paceSelect.value, 10);
