@@ -1,0 +1,11 @@
+# Simulation output (regenerable — don't commit)
+simulations/bankroll_sim_output/
+bankroll_sim_output/
+
+# Python
+__pycache__/
+*.pyc
+
+# OS junk
+.DS_Store
+Thumbs.db
