@@ -6,24 +6,31 @@
 <title>Atlas Research Blackjack Trainer</title>
 <style>
   :root{
-    --paper:#ffffff;
-    --paper-dim:#eef3fa;
-    --navy-deep:#081a33;
-    --navy:#123a70;
-    --navy-light:#2058a8;
-    --accent:#2f6fd1;
-    --accent-soft:#a9c6ee;
+    --paper:#f2efe6;
+    --paper-dim:#e9dfc4;
+    --navy-deep:#0a2a20;
+    --navy:#c9a445;
+    --navy-light:#175c3f;
+    --accent:#c9a445;
+    --accent-soft:#e8d9a8;
     --card-bg:#ffffff;
-    --ink:#0d1b32;
+    --ink:#14110c;
     --red:#a3312c;
     --text-on-navy:#ffffff;
-    --text-on-navy-dim:#c3d4ec;
-    --text-on-paper:#0d1b32;
-    --text-on-paper-dim:#5a6b85;
+    --text-on-navy-dim:#cbbf9a;
+    --text-on-paper:#12362a;
+    --text-on-paper-dim:#5c7367;
     --good:#2e8b46;
     --bad:#b33b30;
 
     /* Table theme (color picker overrides these) */
+    --table-deep:#052a20;
+    --table-mid:#0c3d2c;
+    --table-light:#175c3f;
+    --table-accent:#c9a445;
+    --table-accent-soft:#e8d9a8;
+  }
+  body[data-table-theme="navy"]{
     --table-deep:#081a33;
     --table-mid:#123a70;
     --table-light:#2058a8;
@@ -60,7 +67,18 @@
     font-family:"Times New Roman", Times, serif;
     padding:18px;
   }
-  .wrap{max-width:1180px;margin:0 auto;position:relative;}
+  .wrap{max-width:none;width:100%;margin:0 auto;position:relative;}
+
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:0.8rem;
+    color:var(--text-on-paper-dim);
+    text-decoration:none;
+    margin-bottom:10px;
+  }
+  .back-link:hover{color:var(--navy);}
 
   .brand-main{
     font-size:0.7rem;
@@ -436,6 +454,7 @@
 </head>
 <body>
 <div class="wrap">
+  <a class="back-link" href="../">&larr; Back to ATLAS Research</a>
   <div class="top-bar">
     <div>
       <div class="brand-main">Atlas Research Blackjack Trainer</div>
@@ -474,8 +493,8 @@
       <div class="setting-row">
         <span>Table color</span>
         <select id="themeSelect">
-          <option value="navy" selected>Navy &amp; White</option>
-          <option value="green">Classic Green &amp; Gold</option>
+          <option value="navy">Navy &amp; White</option>
+          <option value="green" selected>Classic Green &amp; Gold</option>
           <option value="burgundy">Burgundy &amp; Gold</option>
           <option value="charcoal">Charcoal &amp; Gold</option>
         </select>
