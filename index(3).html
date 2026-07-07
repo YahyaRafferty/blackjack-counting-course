@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Counting &amp; Quantitative Finance — ATLAS Research</title>
+<style>
+  :root {
+    --felt: #0F3D2E;
+    --felt-dark: #0A2A20;
+    --cream: #F2EFE6;
+    --gold: #C9A227;
+    --gold-bright: #F0C94A;
+    --red: #C4573F;
+    --line: rgba(242, 239, 230, 0.14);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--felt);
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(255,255,255,0.03), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(255,255,255,0.025), transparent 45%);
+    color: var(--cream);
+    font-family: 'Times New Roman', Times, serif;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+
+  .suit-watermark {
+    position: absolute;
+    font-size: 13rem;
+    line-height: 1;
+    color: rgba(242, 239, 230, 0.035);
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 4.5rem 1.5rem 4rem;
+    animation: rise 0.7s ease both;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .eyebrow {
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold-bright);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.6rem;
+    margin-bottom: 1.8rem;
+  }
+
+  .chip {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background:
+      repeating-conic-gradient(var(--gold-bright) 0deg 30deg, var(--felt-dark) 30deg 60deg);
+    border: 1.5px solid var(--gold-bright);
+    box-shadow: inset 0 0 0 3px var(--felt-dark);
+    flex-shrink: 0;
+  }
+
+
+  h1 {
+    font-family: 'Times New Roman', Times, serif;
+    font-weight: 700;
+    font-size: clamp(2.1rem, 4.6vw, 3.2rem);
+    line-height: 1.1;
+    margin: 0 0 0.7rem;
+    color: var(--cream);
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--gold-bright);
+    text-shadow: 0 0 18px rgba(240, 201, 74, 0.35);
+  }
+
+  .lede {
+    font-size: 1.2rem;
+    font-style: italic;
+    line-height: 1.6;
+    max-width: 56ch;
+    color: rgba(242, 239, 230, 0.78);
+    margin: 0 0 0.6rem;
+  }
+
+  /* Signature element: a dealt 6-deck shoe with a live running / true count */
+  .shoe {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--felt-dark);
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1.6rem;
+    box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    flex-wrap: wrap;
+  }
+
+  .cards-row {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+
+  .card {
+    width: 46px;
+    height: 66px;
+    perspective: 300px;
+    transition: transform 0.3s ease;
+  }
+
+  .card:nth-child(odd) { transform: rotate(-2deg); }
+  .card:nth-child(even) { transform: rotate(2deg); }
+  .card:hover { transform: translateY(-4px) rotate(0deg); }
+
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s cubic-bezier(0.4, 0.1, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+
+  .card.flipped .card-inner {
+    transform: rotateY(180deg);
+  }
+
+  .card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 5px;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  .card-back {
+    background:
+      repeating-linear-gradient(45deg, var(--gold) 0 4px, var(--felt-dark) 4px 8px);
+    border: 1px solid var(--gold);
+  }
+
+  .card-front {
+    background: var(--cream);
+    color: var(--felt-dark);
+    transform: rotateY(180deg);
+    flex-direction: column;
+    font-size: 0.95rem;
+    gap: 0.1rem;
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+
+  .card-front.red { color: var(--red); }
+
+  .count-readout {
+    display: flex;
+    gap: 1.6rem;
+    flex-wrap: wrap;
+    padding-left: 1.4rem;
+    border-left: 1px solid var(--line);
+  }
+
+  .count-readout .stat .label {
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(242, 239, 230, 0.5);
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+
+  .count-readout .stat .value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--gold-bright);
+    text-shadow: 0 0 14px rgba(240, 201, 74, 0.3);
+    transition: transform 0.15s ease;
+    display: inline-block;
+  }
+
+  .count-readout .stat .value.pulse {
+    transform: scale(1.15);
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    color: rgba(242, 239, 230, 0.3);
+    margin: 0 0 2.2rem;
+  }
+
+  .divider::before,
+  .divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .divider span {
+    font-size: 1rem;
+    color: var(--gold-bright);
+    opacity: 0.6;
+  }
+
+  nav.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  @media (max-width: 620px) {
+    .divider {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    color: rgba(242, 239, 230, 0.3);
+    margin: 0 0 2.2rem;
+  }
+
+  .divider::before,
+  .divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .divider span {
+    font-size: 1rem;
+    color: var(--gold-bright);
+    opacity: 0.6;
+  }
+
+  nav.cards-grid { grid-template-columns: 1fr; }
+  }
+
+  .link-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    padding: 1.5rem 1.5rem 1.4rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.03), transparent 60%);
+    transition: border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
+  }
+
+  .link-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    background: linear-gradient(160deg, rgba(201,162,39,0.09), transparent 65%);
+  }
+
+  .link-card:focus-visible {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 3px;
+  }
+
+  .link-card .title {
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin: 0 0 0.4rem;
+  }
+
+  .link-card .desc {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: rgba(242, 239, 230, 0.65);
+    margin: 0;
+  }
+
+  footer {
+    margin-top: 3.2rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.82rem;
+    color: rgba(242, 239, 230, 0.5);
+  }
+
+  footer strong { color: rgba(242, 239, 230, 0.75); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-inner { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="suit-watermark" style="top: -3rem; left: -2rem;">&#9824;</div>
+  <div class="suit-watermark" style="bottom: -4rem; right: -3rem;">&#9830;</div>
+  <div class="wrap">
+    <h1>Card Counting &amp; Quantitative Finance</h1>
+    <p class="lede">Play with your head, not your heart.</p>
+    <div class="eyebrow"><span class="chip"></span>ATLAS Research</div>
+
+    <div class="divider"><span>&#9827;</span></div>
+
+    <div class="shoe">
+      <div class="cards-row" id="cardsRow" aria-hidden="true"></div>
+      <div class="count-readout">
+        <div class="stat">
+          <span class="label">Running count</span>
+          <span class="value" id="rc">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"><span>&#9830;</span></div>
+
+    <nav class="cards-grid">
+      <a class="link-card" href="practice/">
+        <span class="title">Practice</span>
+        <p class="desc">A trainer to drill basic strategy decisions until they're automatic.</p>
+      </a>
+      <a class="link-card" href="presentations/">
+        <span class="title">Presentations</span>
+        <p class="desc">The three-part slide series linking card counting to quantitative finance.</p>
+      </a>
+      <a class="link-card" href="sheets/">
+        <span class="title">Reference Sheets</span>
+        <p class="desc">Printable basic strategy, table rules, and a session log for practice.</p>
+      </a>
+      <a class="link-card" href="simulations/">
+        <span class="title">Simulations</span>
+        <p class="desc">Scripts modelling house edge, EV, and bankroll risk over time.</p>
+      </a>
+    </nav>
+
+    <footer>
+      <strong>ATLAS Research</strong> — Algorithmic Trading Lab for Applied Science Research
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      // Hi-Lo values: 2-6 = +1, 7-9 = 0, 10/J/Q/K/A = -1
+      var rankPool = [
+        { r: '2', v: 1 }, { r: '3', v: 1 }, { r: '4', v: 1 }, { r: '5', v: 1 },
+        { r: '6', v: 1 }, { r: '7', v: 0 }, { r: '8', v: 0 }, { r: '9', v: 0 },
+        { r: '10', v: -1 }, { r: 'J', v: -1 }, { r: 'Q', v: -1 }, { r: 'K', v: -1 }, { r: 'A', v: -1 }
+      ];
+      var suits = [
+        { s: '\u2660', red: false }, { s: '\u2665', red: true },
+        { s: '\u2663', red: false }, { s: '\u2666', red: true }
+      ];
+
+      var row = document.getElementById('cardsRow');
+      var rcEl = document.getElementById('rc');
+      var slotCount = 12;
+      var cardEls = [];
+
+      function randomCard() {
+        var rank = rankPool[Math.floor(Math.random() * rankPool.length)];
+        var suit = suits[Math.floor(Math.random() * suits.length)];
+        return { rank: rank, suit: suit };
+      }
+
+      for (var s = 0; s < slotCount; s++) {
+        var el = document.createElement('div');
+        el.className = 'card';
+        el.innerHTML =
+          '<div class="card-inner">' +
+            '<div class="card-face card-back"></div>' +
+            '<div class="card-face card-front"><span class="rank"></span><span class="suit"></span></div>' +
+          '</div>';
+        row.appendChild(el);
+        cardEls.push({
+          el: el,
+          front: el.querySelector('.card-front'),
+          rankEl: el.querySelector('.rank'),
+          suitEl: el.querySelector('.suit'),
+          value: 0
+        });
+      }
+
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var running = 0;
+      var i = 0;
+
+      function dealNext() {
+        var slot = cardEls[i % slotCount];
+        var card = randomCard();
+
+        // face-down before revealing new value
+        slot.el.classList.remove('flipped');
+
+        setTimeout(function () {
+          slot.rankEl.textContent = card.rank.r;
+          slot.suitEl.textContent = card.suit.s;
+          slot.front.classList.toggle('red', card.suit.red);
+          slot.value = card.rank.v;
+          slot.el.classList.add('flipped');
+          running += card.rank.v;
+          i++;
+          // reshuffle the shoe every 40-ish cards, resetting the count
+          if (i % 40 === 0) { running = 0; }
+          rcEl.textContent = running;
+          rcEl.classList.add('pulse');
+          setTimeout(function () { rcEl.classList.remove('pulse'); }, 150);
+        }, reduced ? 0 : 260);
+      }
+
+      if (reduced) {
+        for (var k = 0; k < slotCount; k++) { dealNext(); }
+      } else {
+        dealNext();
+        setInterval(dealNext, 650);
+      }
+    })();
+  </script>
+</body>
+</html>
