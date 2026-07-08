@@ -3,16 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Atlas Research — Blackjack Counting Course</title>
+<title>Presentations — Card Counting & Quantitative Finance</title>
 <style>
   :root{
     --paper:#ffffff;
     --paper-dim:#eef3fa;
-    --navy-deep:#081a33;
-    --navy:#123a70;
-    --navy-light:#2058a8;
-    --accent:#2f6fd1;
-    --accent-soft:#a9c6ee;
     --ink:#0d1b32;
     --text-on-paper:#0d1b32;
     --text-on-paper-dim:#5a6b85;
@@ -49,17 +44,18 @@
     color:var(--text-on-paper-dim);
     margin-top:1px;
   }
+  .back-link{
+    font-size:0.7rem;
+    color:#0c3d2c;
+    text-decoration:none;
+    border-bottom:1px solid #c9a445;
+    padding-bottom:2px;
+  }
 
   h1{
     font-size:2rem;
     color:#0c3d2c;
-    margin:0 0 6px 0;
-  }
-  .intro{
-    color:var(--text-on-paper-dim);
-    font-size:1rem;
-    margin:0 0 32px 0;
-    max-width:60ch;
+    margin:0 0 24px 0;
   }
 
   .links{
@@ -118,82 +114,6 @@
     color:var(--text-on-paper-dim);
     text-align:center;
   }
-
-  .count-strip{
-    display:flex;
-    align-items:center;
-    gap:24px;
-    background:#0c3d2c;
-    border:2px solid #c9a445;
-    border-radius:6px;
-    padding:20px 24px;
-    margin:24px 0 36px 0;
-    overflow:hidden;
-  }
-  .card-lane{
-    flex:1;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    height:64px;
-    perspective:600px;
-    border-right:1px solid rgba(201,164,69,0.4);
-    padding-right:18px;
-  }
-  .flip-card{
-    flex-shrink:0;
-    width:40px;
-    height:56px;
-    position:relative;
-    transform-style:preserve-3d;
-    transition:transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .flip-card.flipped{
-    transform:rotateY(180deg);
-  }
-  .flip-face{
-    position:absolute;
-    inset:0;
-    border-radius:4px;
-    background:#fdf8ec;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:700;
-    font-size:1rem;
-    font-family:"Times New Roman", Times, serif;
-    box-shadow:0 2px 5px rgba(0,0,0,0.35);
-    backface-visibility:hidden;
-  }
-  .flip-face.back{
-    transform:rotateY(180deg);
-  }
-  .flip-face.red{ color:#a3312c; }
-  .flip-face.black{ color:#0d1b32; }
-
-  .count-display{
-    flex-shrink:0;
-    text-align:center;
-    padding-left:4px;
-    min-width:76px;
-  }
-  .count-label{
-    font-size:0.58rem;
-    letter-spacing:0.08em;
-    text-transform:uppercase;
-    color:#e8d9a8;
-  }
-  .count-value{
-    font-size:1.7rem;
-    font-weight:700;
-    color:#f0cfa0;
-    line-height:1.2;
-    transition:transform 0.3s ease;
-  }
-  .count-value.bump{
-    transform:scale(1.15);
-  }
 </style>
 </head>
 <body>
@@ -204,47 +124,32 @@
       <div class="brand-main">Atlas Research</div>
       <div class="brand-sub">Card Counting & Quantitative Finance</div>
     </div>
+    <a class="back-link" href="../index.html">&larr; Back to course</a>
   </div>
 
-  <h1>Blackjack Counting Course</h1>
-
-  <div class="count-strip">
-    <div class="card-lane" id="cardLane"></div>
-    <div class="count-display">
-      <div class="count-label">Running Count</div>
-      <div class="count-value" id="countValue">0</div>
-    </div>
-  </div>
+  <h1>Presentations</h1>
 
   <div class="links">
-    <a class="link-card" href="practice/index.html">
+    <a class="link-card" href="Card Counting & Quantitative Finance I.pptx">
       <div>
-        <div class="link-title">Practice Trainer</div>
-        <div class="link-desc">Interactive basic strategy and card counting practice</div>
+        <div class="link-title">Card Counting & Quantitative Finance I</div>
+        <div class="link-desc">Lecture slides — part one</div>
       </div>
       <div class="arrow">→</div>
     </a>
 
-    <a class="link-card" href="presentations/">
+    <a class="link-card" href="Card Counting & Quantitative Finance II.pptx">
       <div>
-        <div class="link-title">Presentations</div>
-        <div class="link-desc">Lecture slides on card counting and quantitative finance</div>
+        <div class="link-title">Card Counting & Quantitative Finance II</div>
+        <div class="link-desc">Lecture slides — part two</div>
       </div>
       <div class="arrow">→</div>
     </a>
 
-    <a class="link-card" href="sheets/">
+    <a class="link-card" href="Card Counting & Quantitative Finance III.pptx">
       <div>
-        <div class="link-title">Reference Sheets</div>
-        <div class="link-desc">Basic strategy, table rules, and session log sheets</div>
-      </div>
-      <div class="arrow">→</div>
-    </a>
-
-    <a class="link-card" href="simulations/">
-      <div>
-        <div class="link-title">Simulations</div>
-        <div class="link-desc">Python scripts for house edge, EV, and bankroll risk</div>
+        <div class="link-title">Card Counting & Quantitative Finance III</div>
+        <div class="link-desc">Lecture slides — part three</div>
       </div>
       <div class="arrow">→</div>
     </a>
@@ -252,96 +157,5 @@
 
   <footer>Atlas Research</footer>
 </div>
-
-<script>
-(function(){
-  const SUITS = [{s:'♠',c:'black'},{s:'♣',c:'black'},{s:'♥',c:'red'},{s:'♦',c:'red'}];
-  const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-  const HILO = {A:-1,'2':1,'3':1,'4':1,'5':1,'6':1,'7':0,'8':0,'9':0,'10':-1,J:-1,Q:-1,K:-1};
-
-  const lane = document.getElementById('cardLane');
-  const countEl = document.getElementById('countValue');
-
-  const NUM_CARDS = 9;
-  let shoe = [];
-  let runningCount = 0;
-
-  function buildShoe(numDecks){
-    const cards = [];
-    for(let d=0; d<numDecks; d++){
-      for(const rank of RANKS){
-        for(const suit of SUITS){
-          cards.push({rank, suit: suit.s, color: suit.c});
-        }
-      }
-    }
-    for(let i=cards.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [cards[i],cards[j]] = [cards[j],cards[i]];
-    }
-    return cards;
-  }
-
-  function nextCard(){
-    if(shoe.length === 0){
-      shoe = buildShoe(6);
-      runningCount = 0;
-    }
-    return shoe.pop();
-  }
-
-  // Build the fixed row of flip-cards, each holding a front and back face.
-  const slots = [];
-  for(let i=0;i<NUM_CARDS;i++){
-    const flip = document.createElement('div');
-    flip.className = 'flip-card';
-
-    const front = document.createElement('div');
-    front.className = 'flip-face front';
-    const back = document.createElement('div');
-    back.className = 'flip-face back';
-
-    flip.appendChild(front);
-    flip.appendChild(back);
-    lane.appendChild(flip);
-
-    const card = nextCard();
-    front.textContent = card.rank + card.suit;
-    front.classList.add(card.color);
-    runningCount += HILO[card.rank];
-
-    slots.push({flip, front, back, showingFront:true});
-  }
-  countEl.textContent = (runningCount > 0 ? '+' : '') + runningCount;
-
-  function bumpCount(){
-    countEl.classList.remove('bump');
-    void countEl.offsetWidth;
-    countEl.classList.add('bump');
-    setTimeout(() => countEl.classList.remove('bump'), 300);
-  }
-
-  function flipSlot(slot){
-    const card = nextCard();
-    const hiddenFace = slot.showingFront ? slot.back : slot.front;
-    hiddenFace.textContent = card.rank + card.suit;
-    hiddenFace.classList.remove('red','black');
-    hiddenFace.classList.add(card.color);
-
-    slot.flip.classList.toggle('flipped');
-    slot.showingFront = !slot.showingFront;
-
-    runningCount += HILO[card.rank];
-    countEl.textContent = (runningCount > 0 ? '+' : '') + runningCount;
-    bumpCount();
-  }
-
-  let i = 0;
-  setInterval(() => {
-    flipSlot(slots[i % slots.length]);
-    i++;
-  }, 700);
-})();
-</script>
 </body>
 </html>
