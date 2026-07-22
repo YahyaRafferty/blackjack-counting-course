@@ -1,6 +1,6 @@
 # Blackjack Counting Course
 
-A self-contained course on blackjack basic strategy and card counting — covering
+A short course on blackjack basic strategy and Hi-Lo card counting with
 practice, reference material, and the math behind the game.
 
 ## Structure
