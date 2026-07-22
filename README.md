@@ -7,10 +7,10 @@ practice, reference material, and the math behind the game.
 
 | Folder | Contents |
 |---|---|
-| `practice/` | Interactive practice tool (`index.html`) |
-| `presentations/` | Lecture slides on card counting and quantitative finance |
-| `sheets/` | Reference sheets — basic strategy, table rules, session log |
-| `simulations/` | Python scripts for house edge, EV, and bankroll risk |
+| `practice` | Practice playing |
+| `presentations` | Lecture slides on card counting |
+| `sheets` | Reference sheets for basic strategy and counting rules |
+| `simulations` | Python scripts for class simulations |
 
 ## Presentations
 
@@ -20,7 +20,6 @@ practice, reference material, and the math behind the game.
 
 ## Reference sheets
 
-Available as `.docx` and `.pdf`:
 - **Basic Strategy Sheet**
 - **Rules Sheet**
 - **Log Sheet**
