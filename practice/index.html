@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Atlas Research Blackjack Trainer</title>
+<title>Blackjack Trainer</title>
 <style>
   :root{
     --paper:#f2efe6;
@@ -69,34 +69,9 @@
   }
   .wrap{max-width:none;width:100%;margin:0 auto;position:relative;}
 
-  .back-link{
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    font-size:0.8rem;
-    color:var(--text-on-paper-dim);
-    text-decoration:none;
-    margin-bottom:10px;
-  }
-  .back-link:hover{color:var(--navy);}
-
-  .brand-main{
-    font-size:0.7rem;
-    letter-spacing:0.08em;
-    color:var(--text-on-paper);
-    text-transform:uppercase;
-    font-weight:700;
-  }
-  .brand-sub{
-    font-size:0.62rem;
-    letter-spacing:0.04em;
-    color:var(--text-on-paper-dim);
-    margin-top:1px;
-  }
-
   .top-bar{
     display:flex;
-    justify-content:space-between;
+    justify-content:flex-end;
     align-items:flex-start;
     margin-bottom:14px;
     position:relative;
@@ -454,12 +429,7 @@
 </head>
 <body>
 <div class="wrap">
-  <a class="back-link" href="../">&larr; Back</a>
   <div class="top-bar">
-    <div>
-      <div class="brand-main">Atlas Research Blackjack Trainer</div>
-      <div class="brand-sub">Card Counting &amp; Quantitative Finance II</div>
-    </div>
     <div style="display:flex;gap:8px;">
       <button class="gear-btn" id="historyBtn" type="button" title="Hand history &amp; performance" aria-label="Hand history">&#128202;</button>
       <button class="gear-btn" id="gearBtn" type="button" title="Settings" aria-label="Settings">&#9881;</button>
@@ -660,7 +630,7 @@
   const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
   const ORDER = ['2','3','4','5','6','7','8','9','10','A']; // dealer up-card column order
 
-  // ---- Atlas Research basic strategy tables ----
+  // ---- Basic strategy tables ----
   // H = Hit, S = Stand, D = Double else Hit (Dh), Ds = Double else Stand,
   // P = Split, R = Surrender else Hit (Rh)
   const hardRows = {};
