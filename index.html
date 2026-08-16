@@ -444,6 +444,13 @@
           <option value="8">8</option>
         </select>
       </div>
+      <div class="setting-row">
+        <span>Dealer on soft 17</span>
+        <select id="dealerRuleSelect">
+          <option value="s17" selected>Stands (S17)</option>
+          <option value="h17">Hits (H17)</option>
+        </select>
+      </div>
       <div class="setting-row" style="flex-direction:column;align-items:stretch;">
         <span style="margin-bottom:6px;">Training mode</span>
         <div class="segmented" id="modeSeg">
@@ -631,26 +638,33 @@
   const ORDER = ['2','3','4','5','6','7','8','9','10','A']; // dealer up-card column order
 
   // ---- Basic strategy tables ----
-  // Source: Wizard of Odds 4-8 deck basic strategy, dealer STANDS on soft 17.
+  // Source: Wizard of Odds 4-8 deck basic strategy. Dealer column order is
+  // always [2,3,4,5,6,7,8,9,10,A] (see ORDER below).
   // H = Hit, S = Stand, D = Double else Hit (Dh), Ds = Double else Stand,
-  // P = Split, R = Surrender else Hit (Rh)
-  const hardRows = {};
-  const allHit = ['H','H','H','H','H','H','H','H','H','H'];
-  for(let t=5;t<=8;t++) hardRows[t]=allHit.slice();
-  hardRows[9]  = ['H','D','D','D','D','H','H','H','H','H'];
-  hardRows[10] = ['D','D','D','D','D','D','D','D','H','H'];
-  hardRows[11] = ['D','D','D','D','D','D','D','D','D','H'];
-  hardRows[12] = ['H','H','S','S','S','H','H','H','H','H'];
-  hardRows[13] = ['S','S','S','S','S','H','H','H','H','H'];
-  hardRows[14] = ['S','S','S','S','S','H','H','H','H','H'];
-  hardRows[15] = ['S','S','S','S','S','H','H','H','R','H'];
-  hardRows[16] = ['S','S','S','S','S','H','H','R','R','R'];
-  for(let t=17;t<=21;t++) hardRows[t] = ['S','S','S','S','S','S','S','S','S','S'];
+  // P = Split, R = Surrender else Hit (Rh) / Surrender else Split for pairs.
+  function cloneRows(rows){
+    const out = {};
+    for(const k in rows) out[k] = rows[k].slice();
+    return out;
+  }
 
-  // Soft totals, rows for total 13(A,2)..20(A,9)
-  // Corrected for dealer-stands-on-soft-17: double soft 17/18 only vs 3-6,
-  // stand (no double) on soft 18 vs 2 and soft 19 vs 6, always stand soft 19+.
-  const softRows = {
+  // --- S17 base tables (dealer STANDS on soft 17) ---
+  const hardRowsS17 = {};
+  const allHit = ['H','H','H','H','H','H','H','H','H','H'];
+  for(let t=5;t<=8;t++) hardRowsS17[t]=allHit.slice();
+  hardRowsS17[9]  = ['H','D','D','D','D','H','H','H','H','H'];
+  hardRowsS17[10] = ['D','D','D','D','D','D','D','D','H','H'];
+  hardRowsS17[11] = ['D','D','D','D','D','D','D','D','D','H'];
+  hardRowsS17[12] = ['H','H','S','S','S','H','H','H','H','H'];
+  hardRowsS17[13] = ['S','S','S','S','S','H','H','H','H','H'];
+  hardRowsS17[14] = ['S','S','S','S','S','H','H','H','H','H'];
+  hardRowsS17[15] = ['S','S','S','S','S','H','H','H','R','H'];
+  hardRowsS17[16] = ['S','S','S','S','S','H','H','R','R','R'];
+  for(let t=17;t<=21;t++) hardRowsS17[t] = ['S','S','S','S','S','S','S','S','S','S'];
+
+  // Soft totals, rows for total 13(A,2)..20(A,9). Double soft 17/18 only vs
+  // 3-6, stand (no double) on soft 18 vs 2 and soft 19 vs 6, always stand soft 19+.
+  const softRowsS17 = {
     13:['H','H','H','D','D','H','H','H','H','H'],
     14:['H','H','H','D','D','H','H','H','H','H'],
     15:['H','H','D','D','D','H','H','H','H','H'],
@@ -662,7 +676,7 @@
   };
 
   // Pairs, keyed by normalized rank group
-  const pairRows = {
+  const pairRowsS17 = {
     '2':['P','P','P','P','P','P','H','H','H','H'],
     '3':['P','P','P','P','P','P','H','H','H','H'],
     '4':['H','H','H','P','P','H','H','H','H','H'],
@@ -674,6 +688,34 @@
     '10':['S','S','S','S','S','S','S','S','S','S'],
     'A':['P','P','P','P','P','P','P','P','P','P']
   };
+
+  // --- H17 tables (dealer HITS on soft 17) ---
+  // Per Wizard of Odds, only these cells change vs. the S17 base:
+  //  - Double hard 11 vs. dealer A (S17: hit)
+  //  - Surrender hard 15 vs. dealer A (S17: hit)
+  //  - Surrender hard 17 vs. dealer A (S17: stand)
+  //  - Surrender pair of 8s vs. dealer A, else split (S17: always split)
+  //  - Double soft 18 vs. dealer 2 (S17: stand)
+  //  - Double soft 19 vs. dealer 6 (S17: stand)
+  const hardRowsH17 = cloneRows(hardRowsS17);
+  hardRowsH17[11] = hardRowsS17[11].slice(); hardRowsH17[11][9] = 'D'; // vs A
+  hardRowsH17[15] = hardRowsS17[15].slice(); hardRowsH17[15][9] = 'R'; // vs A
+  hardRowsH17[17] = hardRowsS17[17].slice(); hardRowsH17[17][9] = 'R'; // vs A
+
+  const softRowsH17 = cloneRows(softRowsS17);
+  softRowsH17[18] = softRowsS17[18].slice(); softRowsH17[18][0] = 'Ds'; // vs 2
+  softRowsH17[19] = softRowsS17[19].slice(); softRowsH17[19][4] = 'Ds'; // vs 6
+
+  const pairRowsH17 = cloneRows(pairRowsS17);
+  pairRowsH17['8'] = pairRowsS17['8'].slice(); pairRowsH17['8'][9] = 'R'; // vs A
+
+  const STRATEGY = {
+    s17: { hardRows: hardRowsS17, softRows: softRowsS17, pairRows: pairRowsS17 },
+    h17: { hardRows: hardRowsH17, softRows: softRowsH17, pairRows: pairRowsH17 }
+  };
+  function currentStrategy(){
+    return STRATEGY[state.dealerRule] || STRATEGY.s17;
+  }
 
   function normalizeRank(r){ return (r==='K'||r==='Q'||r==='J') ? '10' : r; }
   function dealerIdx(rank){ return ORDER.indexOf(normalizeRank(rank)); }
@@ -696,10 +738,14 @@
   // canSurrender should only be true on an initial two-card, non-split hand.
   function correctAction(cards, dealerUpRank, canDouble, canSplit, canSurrender){
     const dIdx = dealerIdx(dealerUpRank);
+    const { hardRows, softRows, pairRows } = currentStrategy();
     if(canSplit && cards.length===2 && normalizeRank(cards[0].rank)===normalizeRank(cards[1].rank)){
       const g = normalizeRank(cards[0].rank);
       let act = pairRows[g][dIdx];
       if(act==='D' && !canDouble) return 'H';
+      // Pairs fall back to Split (not Hit) when surrender isn't available -
+      // e.g. 8,8 vs A under H17 when surrender is off or the max split count is reached.
+      if(act==='R') return canSurrender ? 'R' : 'P';
       return act;
     }
     const {total, soft} = handTotal(cards);
@@ -712,7 +758,13 @@
     const clamped = Math.min(Math.max(total,5),21);
     let act = hardRows[clamped][dIdx];
     if(act==='D' && !canDouble) return 'H';
-    if(act==='R') return canSurrender ? 'R' : 'H';
+    if(act==='R'){
+      // Hard 17 surrenders only under H17 vs. an Ace; with no surrender
+      // available it falls back to the underlying non-surrender play - Stand
+      // for hard 17+ (H17), Hit for hard 15/16 (both rulesets).
+      if(canSurrender) return 'R';
+      return (clamped>=17) ? 'S' : 'H';
+    }
     return act;
   }
   function actionLabel(a){
@@ -722,6 +774,7 @@
   // ---------------- Game state ----------------
   const state = {
     numDecks: 6,
+    dealerRule: 's17', // 's17' = dealer stands on soft 17, 'h17' = dealer hits soft 17
     shoe: [],
     mode: 'basic',
     showHandTotal: true,
@@ -891,6 +944,7 @@
     historySummary: document.getElementById('historySummary'),
     historyList: document.getElementById('historyList'),
     deckSelect: document.getElementById('deckSelect'),
+    dealerRuleSelect: document.getElementById('dealerRuleSelect'),
     modeSeg: document.getElementById('modeSeg'),
     countingToggles: document.getElementById('countingToggles'),
     countSystemSelect: document.getElementById('countSystemSelect'),
@@ -1131,6 +1185,7 @@
     el.btnInsureYes.style.display = insure ? 'inline-block' : 'none';
     el.btnInsureNo.style.display = insure ? 'inline-block' : 'none';
     el.deckSelect.disabled = state.stage !== 'idle';
+    el.dealerRuleSelect.disabled = state.stage !== 'idle';
     el.countSystemSelect.disabled = state.stage !== 'idle';
     el.practiceModeSelect.disabled = state.stage !== 'idle';
     Array.from(el.modeSeg.querySelectorAll('.segbtn')).forEach(b=>b.disabled = state.stage!=='idle');
@@ -1370,8 +1425,9 @@
   }
 
   function stepDealer(){
-    const {total} = handTotal(state.dealerCards);
-    if(total < 17){ // stands on soft 17 too, since only totals <17 keep hitting
+    const {total, soft} = handTotal(state.dealerCards);
+    const mustHit = total < 17 || (state.dealerRule==='h17' && total===17 && soft);
+    if(mustHit){
       setTimeout(()=>{
         state.dealerCards.push(drawCard(true));
         renderTable();
@@ -1468,6 +1524,12 @@
     state.numDecks = parseInt(el.deckSelect.value,10);
     startNewShoe();
     setMessage('New shoe: '+state.numDecks+' decks. Press Deal to start.');
+  });
+
+  el.dealerRuleSelect.addEventListener('change', ()=>{
+    state.dealerRule = el.dealerRuleSelect.value;
+    const label = state.dealerRule==='h17' ? 'Dealer hits soft 17 (H17)' : 'Dealer stands on soft 17 (S17)';
+    setMessage(label+' \u2014 strategy and dealer play updated. Press Deal to start.');
   });
 
   el.modeSeg.addEventListener('click', (e)=>{
